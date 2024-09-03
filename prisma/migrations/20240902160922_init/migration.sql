@@ -1,55 +1,39 @@
 -- CreateEnum
-CREATE TYPE "RoleUser" AS ENUM ('SUPERADMIN', 'CUSTOMER');
+CREATE TYPE "RoleUser" AS ENUM ('superadmin', 'customer');
 
 -- CreateEnum
-CREATE TYPE "ProductStock" AS ENUM ('READY', 'PREORDER');
+CREATE TYPE "ProductStock" AS ENUM ('ready', 'preorder');
 
 -- CreateEnum
-CREATE TYPE "StatusOrder" AS ENUM ('PENDING', 'SUCCESS', 'FAILED');
-
--- CreateTable
-CREATE TABLE "Follow" (
-    "following_user_id" INTEGER NOT NULL,
-    "followed_user_id" INTEGER NOT NULL,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "Follow_pkey" PRIMARY KEY ("following_user_id","followed_user_id")
-);
+CREATE TYPE "StatusOrder" AS ENUM ('pending', 'success', 'failed');
 
 -- CreateTable
 CREATE TABLE "User" (
     "id" SERIAL NOT NULL,
-    "username" VARCHAR(255) NOT NULL,
-    "role" VARCHAR(255) NOT NULL DEFAULT 'CUSTOMER',
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
     "name" VARCHAR(255) NOT NULL,
     "email" VARCHAR(255) NOT NULL,
     "password" VARCHAR(255) NOT NULL,
-    "type" "RoleUser" NOT NULL,
+    "role" "RoleUser" NOT NULL DEFAULT 'customer',
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "User_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "Post" (
-    "id" SERIAL NOT NULL,
-    "title" VARCHAR(255) NOT NULL,
-    "text" TEXT NOT NULL,
-    "user_id" INTEGER NOT NULL,
-    "status" VARCHAR(255) NOT NULL,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
+CREATE TABLE "Session" (
+    "id" TEXT NOT NULL,
+    "userId" INTEGER NOT NULL,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "Post_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "Session_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "Brand" (
     "id" SERIAL NOT NULL,
-    "logo" VARCHAR(255) NOT NULL,
     "name" VARCHAR(255) NOT NULL,
+    "logo" VARCHAR(255) NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
@@ -86,7 +70,7 @@ CREATE TABLE "Product" (
     "description" TEXT NOT NULL,
     "price" BIGINT NOT NULL,
     "stock" "ProductStock" NOT NULL,
-    "images" VARCHAR(255) NOT NULL,
+    "images" TEXT[],
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
@@ -107,46 +91,45 @@ CREATE TABLE "Order" (
 );
 
 -- CreateTable
-CREATE TABLE "OrdersDetail" (
+CREATE TABLE "OrderDetail" (
     "id" SERIAL NOT NULL,
     "order_id" INTEGER NOT NULL,
     "name" VARCHAR(255) NOT NULL,
+    "phone" VARCHAR(255) NOT NULL,
     "address" VARCHAR(255) NOT NULL,
+    "city" VARCHAR(255) NOT NULL,
     "postal_code" VARCHAR(255) NOT NULL,
     "notes" VARCHAR(255),
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "OrdersDetail_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "OrderDetail_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
-CREATE TABLE "OrdersProducts" (
+CREATE TABLE "OrderProduct" (
     "id" SERIAL NOT NULL,
     "product_id" INTEGER NOT NULL,
     "order_id" INTEGER NOT NULL,
-    "subtotal" INTEGER NOT NULL,
+    "subtotal" BIGINT NOT NULL,
     "quantity" INTEGER NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
-    CONSTRAINT "OrdersProducts_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "OrderProduct_pkey" PRIMARY KEY ("id")
 );
+
+-- CreateIndex
+CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Order_code_key" ON "Order"("code");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "OrdersDetail_order_id_key" ON "OrdersDetail"("order_id");
+CREATE UNIQUE INDEX "OrderDetail_order_id_key" ON "OrderDetail"("order_id");
 
 -- AddForeignKey
-ALTER TABLE "Follow" ADD CONSTRAINT "Follow_following_user_id_fkey" FOREIGN KEY ("following_user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "Follow" ADD CONSTRAINT "Follow_followed_user_id_fkey" FOREIGN KEY ("followed_user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "Post" ADD CONSTRAINT "Post_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Session" ADD CONSTRAINT "Session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Product" ADD CONSTRAINT "Product_brand_id_fkey" FOREIGN KEY ("brand_id") REFERENCES "Brand"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -161,10 +144,10 @@ ALTER TABLE "Product" ADD CONSTRAINT "Product_location_id_fkey" FOREIGN KEY ("lo
 ALTER TABLE "Order" ADD CONSTRAINT "Order_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "OrdersDetail" ADD CONSTRAINT "OrdersDetail_order_id_fkey" FOREIGN KEY ("order_id") REFERENCES "Order"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "OrderDetail" ADD CONSTRAINT "OrderDetail_order_id_fkey" FOREIGN KEY ("order_id") REFERENCES "Order"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "OrdersProducts" ADD CONSTRAINT "OrdersProducts_product_id_fkey" FOREIGN KEY ("product_id") REFERENCES "Product"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "OrderProduct" ADD CONSTRAINT "OrderProduct_product_id_fkey" FOREIGN KEY ("product_id") REFERENCES "Product"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "OrdersProducts" ADD CONSTRAINT "OrdersProducts_order_id_fkey" FOREIGN KEY ("order_id") REFERENCES "Order"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "OrderProduct" ADD CONSTRAINT "OrderProduct_order_id_fkey" FOREIGN KEY ("order_id") REFERENCES "Order"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

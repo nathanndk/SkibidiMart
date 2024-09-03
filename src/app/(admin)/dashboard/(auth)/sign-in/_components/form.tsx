@@ -15,6 +15,8 @@ import { Label } from "@/components/ui/label";
 import { SignIn } from "../lib/actions";
 import { useFormState, useFormStatus } from "react-dom";
 import { ActionResult } from "@/types";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { ExclamationTriangleIcon } from "@heroicons/react/20/solid";
 
 export default function FormSignIn() {
   const initialState: ActionResult = {
@@ -44,6 +46,15 @@ export default function FormSignIn() {
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
+            {state.error !== "" && (
+              <Alert variant="destructive">
+                <ExclamationTriangleIcon className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>
+                  {state.error}
+                </AlertDescription>
+              </Alert>
+            )}
             <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
               <Input
